@@ -357,6 +357,7 @@ def getting_started():
     # params
     N_e=1024
     simtime = 5000. * b2.ms
+    learning_rate = 0.05*b2.nS
     weight_factor = 2.      # changes inverse proportionally to site of neuronpool
     stimulus_center=180
     strength = 0.3*10**(-9)
@@ -373,15 +374,16 @@ def getting_started():
     print('times for increasing current'+str(distr_start))
         #distr_end[t] = (t+1)*simtime/num_steps
     
-    paths =  '/home/melanie/Schreibtisch/MSNE/NISE/results/SeveralBumps.txt'
-    trialmax = 2
-    for sets in range(0,1):
+    result_file = "/home/melanie/Schreibtisch/MSNE/NISE/results/SeveralBumps2.txt"
+    setmax =5 
+    trialmax = 10
+    for sets in range(0,setmax):
         for trials in range(0,trialmax):
             if trials == 0:
                 GEE = 0.35*0.381 * b2.nS*weight_factor
                 err = 0
             else:    
-                file = get_results(paths)
+                file = get_results(result_file)
                 GEE = file[(trials)-1+(sets)*trialmax, 3]*b2.nS
                 err = file[(trials)-1+(sets)*trialmax, 2]
                 
@@ -392,7 +394,7 @@ def getting_started():
                 = simulate_wm(N_excitatory=N_e, N_inhibitory=256,
                               weight_scaling_factor=weight_factor, sim_time=simtime, poisson_firing_rate=0.9*b2.Hz,
                               error = err, G_excit2excit = GEE, 
-                              learning_factor=0.05*b2.nS,
+                              learning_factor=learning_rate,
                               stimulus_center_deg=stimulus_center ,stimulus_width_deg=10, 
                               t_stimulus_start=0 * b2.ms, t_stimulus_duration=200 * b2.ms, stimulus_strength=0.4*b2.nA, 
                               distractor_center_deg=distr_deg_max+180, distr_steps = num_steps, distractor_width_deg=10, 
@@ -437,9 +439,8 @@ def getting_started():
 
 #################################################### SAVE TO FILE #################################################################
     
-            result_file = "/home/melanie/Schreibtisch/MSNE/NISE/results/SeveralBumps.txt"
             with open(result_file, "a") as myfile:
-                myfile.write(str(stimulus_center)+" "+str(distr_deg_max+180)+" "+str(bump_center*360/(2*numpy.pi)-stimulus_center)+" "+str(G_ee/b2.nS)+"\n")
+                myfile.write(str(stimulus_center)+" "+str(distr_deg_max+180)+" "+str(bump_center*360/(2*numpy.pi)-stimulus_center)+" "+str(G_ee/b2.nS)+' '+str(learning_rate/b2.nS)+' '+str(setmax)+' '+str(trialmax)+' '+"\n")
         
             
     
