@@ -73,8 +73,6 @@ def get_results(files):
             continue
         
     results=numpy.array(results)
-    print(results)
-    print(results.shape)
     return results
 
 
@@ -353,6 +351,7 @@ def simulate_wm(
 ########################################Execute WM function###############################################
         
 def getting_started():
+    # Parameters
     b2.defaultclock.dt = 0.1 * b2.ms
     # params
     N_e=1024
@@ -363,6 +362,8 @@ def getting_started():
     strength = 0.3*10**(-9)
     num_steps = 16
     distr_deg_max = 55
+    
+    ### Calculate strength, time course of distractor as inverted parabola ###
     distr_strength = numpy.zeros(2*int(num_steps/2)+1)
     distr_start = numpy. zeros(2*int(num_steps/2)+1)
     for k in range(int(-num_steps/2),int(num_steps/2)+1):
@@ -370,24 +371,35 @@ def getting_started():
         distr_start[k+int(num_steps/2)] = 0+(k+int(num_steps/2))*simtime/num_steps 
     distr_strength = distr_strength*b2.amp
     distr_start = distr_start*b2.second
-    print('full strength = '+str(distr_strength))
-    print('times for increasing current'+str(distr_start))
+    #print('full strength = '+str(distr_strength))
+    #print('times for increasing current'+str(distr_start))
         #distr_end[t] = (t+1)*simtime/num_steps
     
-    result_file = "/home/melanie/Schreibtisch/MSNE/NISE/results/SeveralBumps2.txt"
-    setmax =5 
-    trialmax = 10
+    ### Implement learning based on G_EE ###
+    result_file = "/home/melanie/Schreibtisch/MSNE/NISE/results/SeveralBumps2301_try.txt"
+    ### Define experiment set-up ###
+    setmax = 4
+    adaptation_len = 2
+    washout_len = 2
+    trialmax = adaptation_len+washout_len
     for sets in range(0,setmax):
         for trials in range(0,trialmax):
+            d_strength = distr_strength
             if trials == 0:
                 GEE = 0.35*0.381 * b2.nS*weight_factor
                 err = 0
-            else:    
+            elif (trials < adaptation_len):
+                file = get_results(result_file)
+                GEE = file[(trials)-1+(sets)*trialmax, 3]*b2.nS
+                err = file[(trials)-1+(sets)*trialmax, 2]  
+            else:
+                d_strength=numpy.zeros(2*int(num_steps/2)+1)*b2.amp
                 file = get_results(result_file)
                 GEE = file[(trials)-1+(sets)*trialmax, 3]*b2.nS
                 err = file[(trials)-1+(sets)*trialmax, 2]
-                
-                
+               
+            print('Set No. '+str(sets)+', Trial No. '+str(trials))
+    ### Call working memory function ###                 
             G_ee, rate_monitor_excit, spike_monitor_excit, voltage_monitor_excit, idx_monitored_neurons_excit,\
                 rate_monitor_inhib, spike_monitor_inhib, voltage_monitor_inhib, idx_monitored_neurons_inhib,\
                 weight_profile\
