@@ -79,7 +79,7 @@ def get_results(files):
 ################################### WORKING MEMORY ##############################################
 def simulate_wm(
         N_excitatory=1024, N_inhibitory=256,
-        N_extern_poisson=1000, poisson_firing_rate=1.4 * b2.Hz, weight_scaling_factor=2.,
+        N_extern_poisson=1000, poisson_firing_rate=1.4 * b2.Hz, weight_scaling_factor=2., trialtime=0*b2.ms,
         sigma_weight_profile=20., Jpos_excit2excit=1.6, adapt = True, error=180, prev_GEE=0*b2.nS, norepi=0,
         stimulus_center_deg=180, stimulus_width_deg=40, stimulus_strength=0.07 * b2.namp,
         t_stimulus_start=0 * b2.ms, t_stimulus_duration=0 * b2.ms,
@@ -339,14 +339,16 @@ def simulate_wm(
                 
     @network_operation(dt=1 *b2.ms)
     def norepinephrin(t):
-        K = 0.001*b2.nS*(error-stimulus_center_deg)
-        K_shift = 0.001*b2.nS#*(error-(stimulus_center_deg-distractor_center_deg))
-        tau_NE = 7000*b2.ms
+        K = 0.0001*b2.nS*(error-stimulus_center_deg)
+        K_shift = 0.0001*b2.nS#*(error-(stimulus_center_deg-distractor_center_deg))
+        tau_NE = 1400*b2.ms
         # define rise/fall of Norepinephrin
         if adapt==True:
-            excit_center.G_excit2excit = (prev_GEE+K*(1-numpy.exp(-t/tau_NE)))
+            excit_center.G_excit2excit = K*(t+trialtime)/tau_NE+prev_GEE
         else:
             excit_shiftcenter.G_excit2excit = (prev_GEE-K_shift*(1-numpy.exp(-t/tau_NE)))
+        #plt.scatter(t/b2.ms,excit_center.G_excit2excit[0])
+        #plt.ylim([0,0.0000000007])
             
 
     def get_monitors(pop, nr_monitored, N):
@@ -359,7 +361,7 @@ def simulate_wm(
         spike_monitor = SpikeMonitor(pop, record=idx_monitored_neurons)
         voltage_monitor = StateMonitor(pop, "v", record=idx_monitored_neurons)
         return rate_monitor, spike_monitor, voltage_monitor, idx_monitored_neurons
-
+    
     # collect data of a subset of neurons:
     rate_monitor_inhib, spike_monitor_inhib, voltage_monitor_inhib, idx_monitored_neurons_inhib = \
         get_monitors(inhib_pop, monitored_subset_size, N_inhibitory)
@@ -402,11 +404,11 @@ def getting_started():
         #distr_end[t] = (t+1)*simtime/num_steps
     
     ### Implement learning based on G_EE ###
-    result_file = "/home/melanie/Schreibtisch/MSNE/NISE/results/Norepinephrin2501.txt"
+    result_file = "/home/melanie/Schreibtisch/MSNE/NISE/results/Norepinephrin2701long.txt"
     ### Define experiment set-up ###
     setmax = 1
-    adaptation_len = 2
-    washout_len = 2
+    adaptation_len = 20
+    washout_len = 5
     trialmax = adaptation_len+washout_len
     for sets in range(0,setmax):
         for trials in range(0,trialmax):
@@ -437,7 +439,7 @@ def getting_started():
                 weight_profile\
                 = simulate_wm(N_excitatory=N_e, N_inhibitory=256,
                               weight_scaling_factor=weight_factor, sim_time=simtime, poisson_firing_rate=0.9*b2.Hz,
-                              error = err, prev_GEE = GEE, 
+                              error = err, prev_GEE = GEE, trialtime=simtime*trials,
                               learning_factor=learning_rate, adapt = adapt,
                               stimulus_center_deg=stimulus_center ,stimulus_width_deg=10, 
                               t_stimulus_start=0 * b2.ms, t_stimulus_duration=200 * b2.ms, stimulus_strength=0.4*b2.nA, 
